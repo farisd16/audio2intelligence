@@ -26,7 +26,7 @@ export interface Audio {
 
 interface Codeword {
   word: string;
-  desc: string;
+  meaning: string;
 }
 
 export interface Utterance {
@@ -40,7 +40,8 @@ interface ContextResponseData {
   context: {
     name: string;
     description: string;
-    codewords: Record<string, string>;
+    // backend returns a list of objects like { word: string, meaning: string }
+    codewords: Array<{ word: string; meaning: string }>;
   };
   audio_samples: Audio[];
 }
@@ -67,15 +68,11 @@ export class SessionComponent implements OnInit {
   summary =
     'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc nec dictum augue. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Sed fringilla rutrum posuere. Vivamus maximus purus vitae ex sodales, nec aliquet sem vestibulum. Praesent varius risus at urna vulputate condimentum. Interdum et malesuada fames ac ante ipsum primis in faucibus. Pellentesque tempor, est in scelerisque condimentum, tellus dolor varius arcu, et sollicitudin magna urna id tortor. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc nec dictum augue. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Sed fringilla rutrum posuere. Vivamus maximus purus vitae ex sodales, nec aliquet sem vestibulum. Praesent varius risus at urna vulputate condimentum. Interdum et malesuada fames ac ante ipsum primis in faucibus. Pellentesque tempor, est in scelerisque condimentum, tellus dolor varius arcu, et sollicitudin magna urna id tortor.';
   placeholderText = 'Intercepted radio message of Russian soldiers communicating plan of attack';
-  contextId: string | null = null;
+  contextId: string = '';
   language = 'en';
 
   displayedColumns: string[] = ['word', 'desc'];
-  codewords: Codeword[] = [
-    { word: 'kaka', desc: 'This word is used to describe Faruk Demirovic.' },
-    { word: 'kaka', desc: 'This word is used to describe Faruk Demirovic.' },
-    { word: 'kaka', desc: 'This word is used to describe Faruk Demirovic.' },
-  ];
+  codewords: Codeword[] = [];
   dataSource = this.codewords;
 
   audios: Audio[] = [
@@ -122,10 +119,17 @@ export class SessionComponent implements OnInit {
     this.http.get<ContextResponseData>(this.url + '/' + this.contextId).subscribe((context) => {
       this.audios = context.audio_samples;
       this.summary = context.context.description;
-      this.codewords = Object.entries(context.context.codewords).map(([word, desc]) => ({
-        word,
-        desc,
-      }));
+      // map backend codewords (array of {word, meaning}) into our Codeword[]
+      if (Array.isArray(context.context.codewords)) {
+        this.codewords = context.context.codewords.map((cw) => ({
+          word: cw.word,
+          meaning: cw.meaning,
+        }));
+      } else {
+        // Fallback: keep previous empty list
+        this.codewords = [];
+      }
+
       this.dataSource = this.codewords;
       this.cdr.detectChanges();
     });
@@ -156,18 +160,17 @@ export class SessionComponent implements OnInit {
     const input = event.target as HTMLInputElement;
     if (!input.files?.length) return;
 
-    const file = input.files[0];
-    this.http
-      .put<Audio>(this.url + '/upload-audio', { audio_sample: file, context_id: this.contextId })
-      .subscribe({
-        next: (response) => {
-          this.audios.push(response);
-          this.cdr.detectChanges();
-        },
-        error: (error) => {
-          console.error('Error uploading file:', error);
-        },
-      });
+    const formData = new FormData();
+    formData.append('context_id', this.contextId); // form field
+    formData.append('audio_sample', input.files[0], input.files[0].name); // file field
+    this.http.put(this.url + '/upload', formData).subscribe({
+      next: () => {
+        this.resetContext();
+      },
+      error: (error) => {
+        console.error('Error uploading file:', error);
+      },
+    });
   }
 
   goBack() {

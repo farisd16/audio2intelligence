@@ -119,6 +119,12 @@ def parse_codewords(text: str) -> List[Dict[str, str]]:
             })
     return codewords_list
 
+def ms_to_min_sec(miliseconds):
+    total_seconds = miliseconds // 1000
+    minutes = total_seconds // 60
+    seconds = total_seconds % 60
+    return f"{minutes:02}:{seconds:02}"
+
 SessionDep = Annotated[Session, Depends(get_session)]
 
 @app.on_event("startup")
@@ -184,8 +190,8 @@ async def upload_sample(
         utterances.append(
             {
                 "speaker": utterance.speaker,
-                "start_time": utterance.start,
-                "end_time": utterance.end,
+                "start_time": ms_to_min_sec(utterance.start),
+                "end_time": ms_to_min_sec(utterance.end),
                 "text": {"ru": utterance.text, "en": ""},
             }
         )

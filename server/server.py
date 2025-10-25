@@ -16,8 +16,14 @@ from sqlmodel import (
 import assemblyai as aai
 import uvicorn
 from dotenv import load_dotenv
+from openai import OpenAI
 
 load_dotenv()
+
+client = OpenAI(
+    base_url="https://router.huggingface.co/v1",
+    api_key=os.environ.get("HF_TOKEN"),
+)
 
 aai.settings.api_key = os.environ.get("AAI_TOKEN")
 config = aai.TranscriptionConfig(
@@ -84,7 +90,6 @@ def get_session():
 
 SessionDep = Annotated[Session, Depends(get_session)]
 
-
 @app.on_event("startup")
 def on_startup():
     create_db_and_tables()
@@ -116,12 +121,19 @@ async def create_context(session: SessionDep, name: str) -> int:
 @app.put("/upload")
 async def upload_sample(session: SessionDep, audio_sample: UploadFile):
     transcript = aai.Transcriber().transcribe(audio_sample.file, config)
-    print(transcript.text)
+    russian_text = ""
     for utterance in transcript.utterances:
-        print(
-            f"Speaker {utterance.speaker}: {utterance.text} ({utterance.start_time} - {utterance.end_time})"
-        )
-
+        russian_text += f"Speaker {utterance.speaker}: {utterance.text}\n"
+    completion = client.chat.completions.create(
+        model="deepseek-ai/DeepSeek-V3.2-Exp:novita",
+        messages=[
+            {
+                "role": "user",
+                "content": f"Translate this text from Russian to English:{russian_text}"
+            }
+        ],
+    )
+    print(completion.choices[0].message.content)
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)

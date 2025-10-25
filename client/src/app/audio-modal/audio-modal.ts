@@ -8,6 +8,8 @@ import {
   MatDialogModule,
 } from '@angular/material/dialog';
 import { SpeakerModal } from '../speaker-modal/speaker-modal';
+import { Utterance, Audio } from '../session-component/session-component';
+import { LanguageService } from '../language.service';
 
 interface Transcript {
   speaker: string;
@@ -30,10 +32,20 @@ export class AudioModal {
   // audioId is provided via MAT_DIALOG_DATA when opened by MatDialog
   constructor(
     public dialogRef: MatDialogRef<AudioModal>,
-    @Inject(MAT_DIALOG_DATA) public data: { audioId: number },
-    private dialog: MatDialog
-  ) {}
+    @Inject(MAT_DIALOG_DATA) public data: { audio: Audio },
+    private dialog: MatDialog,
+    private languageService: LanguageService
+  ) {
+    this.name = data.audio.name;
+    this.transcripts =
+      data.audio.utterances?.map((utt) => ({
+        speaker: utt.speaker,
+        timestamp: `${utt.start_time} - ${utt.end_time}`,
+        content: languageService.currentLanguage === 'en' ? utt.text.en : utt.text.ru,
+      })) || [];
+  }
 
+  language = 'en';
   name = 'Intercepted Communication 1';
   desc =
     'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc nec dictum augue. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Sed fringilla rutrum posuere. Vivamus maximus purus vitae ex sodales, nec aliquet sem vestibulum. Praesent varius risus at urna vulputate condimentum. Interdum et malesuada fames ac ante ipsum primis in faucibus. Pellentesque tempor, est in scelerisque condimentum, tellus dolor varius arcu, et sollicitudin magna urna id tortor. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc nec dictum augue. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Sed fringilla rutrum posuere. Vivamus maximus purus vitae ex sodales, nec aliquet sem vestibulum. Praesent varius risus at urna vulputate condimentum. Interdum et malesuada fames ac ante ipsum primis in faucibus. Pellentesque tempor, est in scelerisque condimentum, tellus dolor varius arcu, et sollicitudin magna urna id tortor.';

@@ -1,4 +1,4 @@
-import { Component, ElementRef, ViewChild } from '@angular/core';
+import { ChangeDetectorRef, Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { SpeakerModal } from '../speaker-modal/speaker-modal';
 import { MatDialog } from '@angular/material/dialog';
@@ -14,18 +14,29 @@ import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { NgxGraphModule, Node } from '@swimlane/ngx-graph';
 import { NgxChartsModule } from '@swimlane/ngx-charts';
 import { AudioModal } from '../audio-modal/audio-modal';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { HttpClient } from '@angular/common/http';
+import { BehaviorSubject } from 'rxjs';
+import { LanguageService } from '../language.service';
 
-interface Audio {
+export interface Audio {
   id: number;
   name: string;
-  desc: string;
+  description: string;
+  utterances?: Utterance[];
 }
 
 interface Codeword {
   word: string;
   desc: string;
+}
+
+export interface Utterance {
+  speaker: string;
+  start_time: string;
+  end_time: string;
+  text: { en: string; ru: string };
 }
 
 @Component({
@@ -45,10 +56,13 @@ interface Codeword {
   templateUrl: './session-component.html',
   styleUrl: './session-component.scss',
 })
-export class SessionComponent {
+export class SessionComponent implements OnInit {
+  private url = 'http://localhost:8000';
+
   summary =
     'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc nec dictum augue. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Sed fringilla rutrum posuere. Vivamus maximus purus vitae ex sodales, nec aliquet sem vestibulum. Praesent varius risus at urna vulputate condimentum. Interdum et malesuada fames ac ante ipsum primis in faucibus. Pellentesque tempor, est in scelerisque condimentum, tellus dolor varius arcu, et sollicitudin magna urna id tortor. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc nec dictum augue. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Sed fringilla rutrum posuere. Vivamus maximus purus vitae ex sodales, nec aliquet sem vestibulum. Praesent varius risus at urna vulputate condimentum. Interdum et malesuada fames ac ante ipsum primis in faucibus. Pellentesque tempor, est in scelerisque condimentum, tellus dolor varius arcu, et sollicitudin magna urna id tortor.';
   placeholderText = 'Intercepted radio message of Russian soldiers communicating plan of attack';
+  contextId: string | null = null;
   language = 'en';
 
   displayedColumns: string[] = ['word', 'desc'];
@@ -60,14 +74,14 @@ export class SessionComponent {
   dataSource = this.codewords;
 
   audios: Audio[] = [
-    { id: 1, name: 'Audio 1', desc: this.placeholderText },
-    { id: 2, name: 'Audio 2', desc: this.placeholderText },
-    { id: 3, name: 'Audio 3', desc: this.placeholderText },
-    { id: 4, name: 'Audio 4', desc: this.placeholderText },
-    { id: 5, name: 'Audio 5', desc: this.placeholderText },
-    { id: 6, name: 'Audio 6', desc: this.placeholderText },
-    { id: 7, name: 'Audio 7', desc: this.placeholderText },
-    { id: 8, name: 'Audio 8', desc: this.placeholderText },
+    { id: 1, name: 'Audio 1', description: this.placeholderText },
+    { id: 2, name: 'Audio 2', description: this.placeholderText },
+    { id: 3, name: 'Audio 3', description: this.placeholderText },
+    { id: 4, name: 'Audio 4', description: this.placeholderText },
+    { id: 5, name: 'Audio 5', description: this.placeholderText },
+    { id: 6, name: 'Audio 6', description: this.placeholderText },
+    { id: 7, name: 'Audio 7', description: this.placeholderText },
+    { id: 8, name: 'Audio 8', description: this.placeholderText },
   ];
 
   nodes = [
@@ -84,7 +98,21 @@ export class SessionComponent {
 
   @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
 
-  constructor(private dialog: MatDialog, private router: Router) {}
+  constructor(
+    private dialog: MatDialog,
+    private router: Router,
+    private http: HttpClient,
+    private route: ActivatedRoute,
+    private cdr: ChangeDetectorRef,
+    private languageService: LanguageService
+  ) {}
+
+  ngOnInit(): void {
+    this.contextId = this.route.snapshot.queryParamMap.get('id');
+    this.languageService.language$.subscribe((lang) => {
+      this.language = lang;
+    });
+  }
 
   onNodeClick(node: Node) {
     // Open SpeakerModal as a Material dialog and pass node ID
@@ -95,8 +123,7 @@ export class SessionComponent {
   }
 
   switchLanguage() {
-    if (this.language === 'ru') this.language = 'en';
-    else this.language = 'ru';
+    this.languageService.toggleLanguage();
   }
 
   onAudioClick(id: number) {
@@ -104,7 +131,7 @@ export class SessionComponent {
     this.dialog.open(AudioModal, {
       maxWidth: '80vw',
       panelClass: 'dark-cyan-dialog',
-      data: { audioId: id },
+      data: { audio: this.audios[id] },
     });
   }
 
@@ -117,7 +144,17 @@ export class SessionComponent {
     if (!input.files?.length) return;
 
     const file = input.files[0];
-    console.log('Selected file:', file);
+    this.http
+      .put<Audio>(this.url + '/upload-audio', { audio_sample: file, context_id: this.contextId })
+      .subscribe({
+        next: (response) => {
+          this.audios.push(response);
+          this.cdr.detectChanges();
+        },
+        error: (error) => {
+          console.error('Error uploading file:', error);
+        },
+      });
   }
 
   goBack() {

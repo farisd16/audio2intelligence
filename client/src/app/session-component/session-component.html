@@ -8,14 +8,14 @@
       <div class="d-flex flex-column" style="gap: 1em; padding: 1.5em 0.5em">
         <button matButton="filled" class="add-btn" (click)="onAddClick()">Add new audio</button>
         <input type="file" style="display: none" #fileInput (change)="onFileSelected($event)" />
-        @for(audio of audios; track audio.id) {
+        @for(audio of audios; let i = $index; track audio.id) {
         <mat-card appearance="raised">
           <mat-card-header>
             <mat-card-title>{{ audio.name }}</mat-card-title>
-            <mat-card-subtitle class="mt-1">{{ audio.desc }}</mat-card-subtitle>
+            <mat-card-subtitle class="mt-1">{{ audio.description }}</mat-card-subtitle>
           </mat-card-header>
           <mat-card-actions>
-            <button matButton class="view-btn" (click)="onAudioClick(audio.id)">View More</button>
+            <button matButton class="view-btn" (click)="onAudioClick(i)">View More</button>
           </mat-card-actions>
         </mat-card>
         }

@@ -52,7 +52,7 @@ class Context(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     name: str = Field(index=True)
     description: str = Field(default="")
-    date: datetime
+    date: str = Field(default="")
     codewords: List[Dict[str, str]] = Field(
         default_factory=list, sa_column=Column(JSON)
     )
@@ -128,10 +128,11 @@ async def get_contexts(
 async def create_context(
     session: SessionDep, create_context_dto: CreateContextDTO
 ) -> int:
+    date=datetime.utcnow()
     new_context = Context(
         name=create_context_dto.name,
         codewords=[],
-        date=datetime.utcnow(),
+        date=date.strftime("%B %d, %Y"),
     )
 
     session.add(new_context)

@@ -1,4 +1,4 @@
-from typing import Annotated, List, Optional, Dict
+from typing import Annotated, List, Optional, Dict, Any
 from datetime import datetime
 import os
 
@@ -31,8 +31,11 @@ app = FastAPI()
 class Context(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     name: str = Field(index=True)
-    description: str = Field()
+    description: str = Field(default="")
     date: datetime
+    codewords: List[Dict[str, str]] = Field(
+        default=[], default_factory=list, sa_column=Column(JSON)
+    )
 
     audio_samples: List["AudioSample"] = Relationship(back_populates="context")
     speakers: List["Speaker"] = Relationship(back_populates="context")
@@ -42,6 +45,9 @@ class AudioSample(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     name: str = Field(index=True)
     description: Dict[str, str] = Field(default_factory=dict, sa_column=Column(JSON))
+    utterances: List[Dict[str, str, Any]] = Field(
+        default_factory=list, sa_column=Column(JSON)
+    )
 
     context_id: Optional[int] = Field(default=None, foreign_key="context.id")
     context: Optional[Context] = Relationship(back_populates="audio_samples")
@@ -94,12 +100,27 @@ async def get_contexts(
     return contexts
 
 
+@app.post("/create-context")
+async def create_context(session: SessionDep, name: str) -> int:
+    new_context = Context(
+        name=name,
+        date=datetime.now(datetime.timezone.cet),
+    )
+
+    session.add(new_context)
+    session.commit()
+    session.refresh(new_context)  # reload from DB to get auto-generated ID
+    return new_context.id
+
+
 @app.put("/upload")
 async def upload_sample(session: SessionDep, audio_sample: UploadFile):
     transcript = aai.Transcriber().transcribe(audio_sample.file, config)
     print(transcript.text)
     for utterance in transcript.utterances:
-        print(f"Speaker {utterance.speaker}: {utterance.text}")
+        print(
+            f"Speaker {utterance.speaker}: {utterance.text} ({utterance.start_time} - {utterance.end_time})"
+        )
 
 
 if __name__ == "__main__":

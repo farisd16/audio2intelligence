@@ -17,6 +17,7 @@ import assemblyai as aai
 import uvicorn
 from dotenv import load_dotenv
 from openai import OpenAI
+from pydantic import BaseModel
 
 load_dotenv()
 
@@ -88,7 +89,12 @@ def get_session():
         yield session
 
 
+class CreateContextDTO(BaseModel):
+    name: str
+
+
 SessionDep = Annotated[Session, Depends(get_session)]
+
 
 @app.on_event("startup")
 def on_startup():
@@ -106,11 +112,13 @@ async def get_contexts(
 
 
 @app.post("/create-context")
-async def create_context(session: SessionDep, name: str) -> int:
+async def create_context(
+    session: SessionDep, create_context_dto: CreateContextDTO
+) -> int:
     new_context = Context(
-        name=name,
+        name=create_context_dto.name,
         codewords=[],
-        date=datetime.now(datetime.timezone.cet),
+        date=datetime.utcnow(),
     )
 
     session.add(new_context)
@@ -130,11 +138,12 @@ async def upload_sample(session: SessionDep, audio_sample: UploadFile):
         messages=[
             {
                 "role": "user",
-                "content": f"Translate this text from Russian to English:{russian_text}"
+                "content": f"Translate this text from Russian to English:{russian_text}",
             }
         ],
     )
     print(completion.choices[0].message.content)
+
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)

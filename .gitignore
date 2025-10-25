@@ -4,3 +4,4 @@ node_modules
 *.db
 audio
 model
+__pycache__

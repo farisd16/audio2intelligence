@@ -2,7 +2,7 @@ from typing import Annotated, List, Optional, Dict, Any
 from datetime import datetime
 import os
 
-from fastapi import Depends, FastAPI, UploadFile, Query
+from fastapi import Depends, FastAPI, UploadFile, Query, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from sqlmodel import (
     Field,
@@ -17,15 +17,11 @@ from sqlmodel import (
 import assemblyai as aai
 import uvicorn
 from dotenv import load_dotenv
-from openai import OpenAI
 from pydantic import BaseModel
 
-load_dotenv()
+from llm import translate_text
 
-client = OpenAI(
-    base_url="https://router.huggingface.co/v1",
-    api_key=os.environ.get("HF_TOKEN"),
-)
+load_dotenv()
 
 aai.settings.api_key = os.environ.get("AAI_TOKEN")
 config = aai.TranscriptionConfig(
@@ -37,7 +33,7 @@ app = FastAPI()
 
 origins = [
     "http://localhost",
-    "http://localhost:4200", 
+    "http://localhost:4200",
 ]
 
 app.add_middleware(
@@ -47,6 +43,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 class Context(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
@@ -106,6 +103,10 @@ class CreateContextDTO(BaseModel):
     name: str
 
 
+class UploadSampleDTO(BaseModel):
+    context_id: str
+
+
 SessionDep = Annotated[Session, Depends(get_session)]
 
 
@@ -128,7 +129,7 @@ async def get_contexts(
 async def create_context(
     session: SessionDep, create_context_dto: CreateContextDTO
 ) -> int:
-    date=datetime.utcnow()
+    date = datetime.utcnow()
     new_context = Context(
         name=create_context_dto.name,
         codewords=[],
@@ -142,21 +143,45 @@ async def create_context(
 
 
 @app.put("/upload")
-async def upload_sample(session: SessionDep, audio_sample: UploadFile):
+async def upload_sample(
+    session: SessionDep,
+    context_id: str = Form(...),
+    audio_sample: UploadFile = File(...),
+):
     transcript = aai.Transcriber().transcribe(audio_sample.file, config)
-    russian_text = ""
+    russian_text_to_translate = ""
+    utterances = []
+
+    print("Transcription done")
+
     for utterance in transcript.utterances:
-        russian_text += f"Speaker {utterance.speaker}: {utterance.text}\n"
-    completion = client.chat.completions.create(
-        model="deepseek-ai/DeepSeek-V3.2-Exp:novita",
-        messages=[
+        utterances.append(
             {
-                "role": "user",
-                "content": f"Translate this text from Russian to English:{russian_text}",
+                "speaker": utterance.speaker,
+                "start_time": utterance.start,
+                "end_time": utterance.end,
+                "text": {"ru": utterance.text, "en": ""},
             }
-        ],
+        )
+        russian_text_to_translate += f"Speaker {utterance.speaker}: {utterance.text}\n"
+
+    translated_english_text = translate_text(russian_text_to_translate)
+    for idx, line in enumerate(translated_english_text.splitlines()):
+        _, text = line.split(":", 1)  # split only at the first colon
+        text = text.strip()
+        utterances[idx]["text"]["en"] = text
+
+    new_audio_sample = AudioSample(
+        name=audio_sample.filename,
+        description="Lorem ipsum",
+        utterances=utterances,
+        context_id=context_id,
     )
-    print(completion.choices[0].message.content)
+    session.add(new_audio_sample)
+    session.commit()
+    session.refresh(new_audio_sample)
+
+    return new_audio_sample
 
 
 if __name__ == "__main__":

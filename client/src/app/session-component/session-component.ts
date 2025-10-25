@@ -1,24 +1,21 @@
 import { ChangeDetectorRef, Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { SpeakerModal } from '../speaker-modal/speaker-modal';
-import { MatDialog } from '@angular/material/dialog';
+import { AudioModal } from '../audio-modal/audio-modal';
+import { ActivatedRoute, Router } from '@angular/router';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { HttpClient } from '@angular/common/http';
 
 // Material imports
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatTableModule } from '@angular/material/table';
 import { MatIconModule } from '@angular/material/icon';
-import { MatButtonToggleModule } from '@angular/material/button-toggle';
+import { MatDialog } from '@angular/material/dialog';
 
 // ngx-graph imports
 import { NgxGraphModule, Node } from '@swimlane/ngx-graph';
 import { NgxChartsModule } from '@swimlane/ngx-charts';
-import { AudioModal } from '../audio-modal/audio-modal';
-import { ActivatedRoute, Router } from '@angular/router';
-import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject } from 'rxjs';
-import { LanguageService } from '../language.service';
 
 export interface Audio {
   id: number;
@@ -39,6 +36,15 @@ export interface Utterance {
   text: { en: string; ru: string };
 }
 
+interface ContextResponseData {
+  context: {
+    name: string;
+    description: string;
+    codewords: Record<string, string>;
+  };
+  audio_samples: Audio[];
+}
+
 @Component({
   selector: 'app-session-component',
   imports: [
@@ -49,7 +55,6 @@ export interface Utterance {
     NgxChartsModule,
     MatTableModule,
     MatIconModule,
-    MatButtonToggleModule,
     ReactiveFormsModule,
     FormsModule,
   ],
@@ -103,14 +108,26 @@ export class SessionComponent implements OnInit {
     private router: Router,
     private http: HttpClient,
     private route: ActivatedRoute,
-    private cdr: ChangeDetectorRef,
-    private languageService: LanguageService
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
-    this.contextId = this.route.snapshot.queryParamMap.get('id');
-    this.languageService.language$.subscribe((lang) => {
-      this.language = lang;
+    this.route.queryParams.subscribe((params) => {
+      this.contextId = params['id'];
+      this.resetContext();
+    });
+  }
+
+  resetContext() {
+    this.http.get<ContextResponseData>(this.url + '/' + this.contextId).subscribe((context) => {
+      this.audios = context.audio_samples;
+      this.summary = context.context.description;
+      this.codewords = Object.entries(context.context.codewords).map(([word, desc]) => ({
+        word,
+        desc,
+      }));
+      this.dataSource = this.codewords;
+      this.cdr.detectChanges();
     });
   }
 
@@ -120,10 +137,6 @@ export class SessionComponent implements OnInit {
       panelClass: 'dark-cyan-dialog',
       data: { speakerId: node.id },
     });
-  }
-
-  switchLanguage() {
-    this.languageService.toggleLanguage();
   }
 
   onAudioClick(id: number) {

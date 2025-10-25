@@ -64,7 +64,7 @@ export class MainComponent implements OnInit {
   }
 
   openSession(contextId: number) {
-    this.router.navigate(['session', { id: contextId }]);
+    this.router.navigate(['session'], { queryParams: { id: contextId } });
   }
 
   openAddDialog() {

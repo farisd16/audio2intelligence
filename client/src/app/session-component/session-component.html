@@ -12,7 +12,9 @@
         <mat-card appearance="raised">
           <mat-card-header>
             <mat-card-title>{{ audio.name }}</mat-card-title>
-            <mat-card-subtitle class="mt-1">{{ audio.description }}</mat-card-subtitle>
+            <mat-card-subtitle class="mt-1"
+              >{{ audio.description | slice : 0 : 100 }}..</mat-card-subtitle
+            >
           </mat-card-header>
           <mat-card-actions>
             <button matButton class="view-btn" (click)="onAudioClick(i)">View More</button>
@@ -22,13 +24,7 @@
       </div>
     </div>
     <div class="col-8 text-center">
-      <div class="d-flex justify-content-between" style="margin: 1.5em 0">
-        <p class="box-label" style="align-self: end; margin-bottom: 0">Speaker Hierarchy</p>
-        <mat-button-toggle-group [(ngModel)]="language" (change)="switchLanguage()" exclusive>
-          <mat-button-toggle value="en">EN</mat-button-toggle>
-          <mat-button-toggle value="ru">RU</mat-button-toggle>
-        </mat-button-toggle-group>
-      </div>
+      <p class="box-label" style="margin-top: 1.5em">Speaker Hierarchy</p>
       <div class="box-container w-100">
         <ngx-graph [links]="links" [nodes]="nodes" layout="dagre" [draggingEnabled]="false">
           <ng-template #nodeTemplate let-node>

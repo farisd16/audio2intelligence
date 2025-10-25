@@ -13,6 +13,7 @@ from sqlmodel import (
     Relationship,
     Column,
     JSON,
+    update,
 )
 from sqlalchemy.orm import selectinload
 import assemblyai as aai
@@ -20,7 +21,7 @@ import uvicorn
 from dotenv import load_dotenv
 from pydantic import BaseModel
 
-from llm import translate_text, generate_summary
+from llm import translate_text, generate_summary, generate_context_summary
 
 load_dotenv()
 
@@ -198,6 +199,23 @@ async def upload_sample(
     session.add(new_audio_sample)
     session.commit()
     session.refresh(new_audio_sample)
+
+    context_text = ""
+    audio_samples = session.exec(
+        select(AudioSample).where(AudioSample.context_id == context_id)
+    ).all()
+    for index, audio in enumerate(audio_samples, start=1):
+        context_text += f"Audio Sample {index} : {audio.description}\n"
+    summarized_context_text = generate_context_summary(context_text)
+
+    stmt = (
+        update(Context)
+        .where(Context.id == 1)
+        .values(description=summarized_context_text)
+    )
+    
+    session.exec(stmt)
+    session.commit()
 
     return new_audio_sample
 

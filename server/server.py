@@ -210,7 +210,7 @@ async def upload_sample(
 
     stmt = (
         update(Context)
-        .where(Context.id == 1)
+        .where(Context.id == context_id)
         .values(description=summarized_context_text)
     )
     

@@ -21,7 +21,13 @@ import uvicorn
 from dotenv import load_dotenv
 from pydantic import BaseModel
 
-from llm import translate_text, generate_summary, generate_context_summary, find_code_words
+from llm import (
+    translate_text,
+    generate_summary,
+    generate_speaker_summaries_and_hierarchy,
+    generate_context_summary,
+    find_code_words,
+)
 
 load_dotenv()
 
@@ -58,6 +64,7 @@ class Context(SQLModel, table=True):
 
     audio_samples: List["AudioSample"] = Relationship(back_populates="context")
     speakers: List["Speaker"] = Relationship(back_populates="context")
+    hierarchies: List["HierarchyRule"] = Relationship(back_populates="context")
 
 
 class AudioSample(SQLModel, table=True):
@@ -74,15 +81,20 @@ class AudioSample(SQLModel, table=True):
 
 class Speaker(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
-    name: Dict[str, str] = Field(default_factory=dict, sa_column=Column(JSON))
+    name: str = Field(default="")
     description: str = Field(default="")
 
     context_id: Optional[int] = Field(default=None, foreign_key="context.id")
     context: Optional["Context"] = Relationship(back_populates="speakers")
 
 
-class Hierarchy(SQLModel, table=True):
+class HierarchyRule(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
+    parent_name: str = Field(default="")
+    child_name: str = Field(default="")
+
+    context_id: Optional[int] = Field(default=None, foreign_key="context.id")
+    context: Optional["Context"] = Relationship(back_populates="hierarchies")
 
 
 sqlite_file_name = "database.db"
@@ -108,16 +120,15 @@ class CreateContextDTO(BaseModel):
 class UploadSampleDTO(BaseModel):
     context_id: str
 
+
 def parse_codewords(text: str) -> List[Dict[str, str]]:
     codewords_list = []
     for line in text.strip().split("\n"):
         if "-" in line:
             key, value = line.split("-", 1)
-            codewords_list.append({
-                "word": key.strip(),
-                "meaning": value.strip()
-            })
+            codewords_list.append({"word": key.strip(), "meaning": value.strip()})
     return codewords_list
+
 
 def ms_to_min_sec(miliseconds):
     total_seconds = miliseconds // 1000
@@ -125,7 +136,9 @@ def ms_to_min_sec(miliseconds):
     seconds = total_seconds % 60
     return f"{minutes:02}:{seconds:02}"
 
+
 SessionDep = Annotated[Session, Depends(get_session)]
+
 
 @app.on_event("startup")
 def on_startup():
@@ -154,7 +167,20 @@ def get_context(session: SessionDep, context_id: int):
         select(AudioSample).where(AudioSample.context_id == context_id)
     ).all()
 
-    return {"context": context, "audio_samples": audio_samples}
+    hierarchy = session.exec(
+        select(HierarchyRule).where(HierarchyRule.context_id == context_id)
+    ).all()
+
+    speakers = session.exec(
+        select(Speaker).where(Speaker.context_id == context_id)
+    ).all()
+
+    return {
+        "context": context,
+        "audio_samples": audio_samples,
+        "speakers": speakers,
+        "hierarchy": hierarchy,
+    }
 
 
 @app.post("/create-context")
@@ -183,10 +209,13 @@ async def upload_sample(
     transcript = aai.Transcriber().transcribe(audio_sample.file, config)
     russian_text_to_translate = ""
     utterances = []
+    speakers = []
 
-    print("Transcription done")
+    print("Transcription done\n")
 
     for utterance in transcript.utterances:
+        if utterance.speaker not in speakers:
+            speakers.append(utterance.speaker)
         utterances.append(
             {
                 "speaker": utterance.speaker,
@@ -204,6 +233,27 @@ async def upload_sample(
         utterances[idx]["text"]["en"] = text
 
     summarized_english_text = generate_summary(translated_english_text)
+    speaker_summaries, hierarchy = generate_speaker_summaries_and_hierarchy(
+        translated_english_text
+    )
+
+    for speaker in speaker_summaries:
+        new_speaker = Speaker(
+            name=speaker, description=speaker_summaries[speaker], context_id=context_id
+        )
+        session.add(new_speaker)
+        session.commit()
+        session.refresh(new_speaker)
+
+    for rule in hierarchy:
+        new_rule = HierarchyRule(
+            parent_name=rule["parent_name"],
+            child_name=rule["child_name"],
+            context_id=context_id,
+        )
+        session.add(new_rule)
+        session.commit()
+        session.refresh(new_rule)
 
     new_audio_sample = AudioSample(
         name=audio_sample.filename,
@@ -232,7 +282,7 @@ async def upload_sample(
         .where(Context.id == context_id)
         .values(description=summarized_context_text, codewords=code_words)
     )
-    
+
     session.exec(stmt)
     session.commit()
 

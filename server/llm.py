@@ -1,4 +1,6 @@
 import os
+import re
+from typing import Any, Dict
 
 from openai import OpenAI
 from dotenv import load_dotenv
@@ -32,7 +34,7 @@ def translate_text(russian_text: str) -> str:
         ],
     )
     response = completion.choices[0].message.content
-    print(f"LLM translated text to English:\n{response}")
+    print(f"LLM translated text to English:\n{response}\n")
     return response
 
 
@@ -54,8 +56,59 @@ def generate_summary(text: str) -> str:
         ],
     )
     response = completion.choices[0].message.content
-    print(f"LLM summarized text:\n{response}")
+    print(f"LLM summarized text:\n{response}\n")
     return response
+
+
+def generate_speaker_summaries_and_hierarchy(text: str) -> Dict[str, Any]:
+    completion = client.chat.completions.create(
+        model="deepseek-ai/DeepSeek-V3.2-Exp:novita",
+        messages=[
+            {
+                "role": "system",
+                "content": "You are a helpful assistant. Given a dialog in a military setting, you are able to generate concise and helpful summaries of each speaker. You are also able to recognize a hierarchy in a military setting between the speakers.",
+            },
+            {
+                "role": "user",
+                "content": f"""\
+                    You will be given text in the format "Speaker <X>: <transcribed_speech>". Here is the text:
+                    {text}
+
+                    Please do two things:
+                    1 - Generate a summary of each speaker in the format "Speaker <X>: <speaker_summary>"
+                    2 - Generate a list of hierarchy rules that you derived from the dialog.
+
+                    Here is an example response:
+                    1 - Speaker Summaries:
+                    Speaker <X>: <speaker_summary>
+                    Speaker <Y>: <speaker_summary>
+                    Speaker <Z>: <speaker_summary>
+                    ...
+
+                    2 - Hierarchy rules:
+                    X commands Y
+                    Y commands Z
+                    ...
+
+                    Your response MUST follow the format of the example response.
+                """,
+            },
+        ],
+    )
+    response = completion.choices[0].message.content
+    print(f"LLM summarized speakers and generated hierarchy:\n{response}\n")
+
+    speaker_pattern = r"Speaker (\w): (.+)"
+    speaker_summaries = dict(re.findall(speaker_pattern, response))
+
+    hierarchy_pattern = r"(\w) commands (\w)"
+    hierarchy_rules = [
+        {"parent_name": src, "child_name": tgt}
+        for src, tgt in re.findall(hierarchy_pattern, response)
+    ]
+
+    return speaker_summaries, hierarchy_rules
+
 
 def generate_context_summary(text: str) -> str:
     completion = client.chat.completions.create(
@@ -77,6 +130,7 @@ def generate_context_summary(text: str) -> str:
     response = completion.choices[0].message.content
     print(f"LLM summarized context text:\n{response}")
     return response
+
 
 def find_code_words(text: str) -> str:
     completion = client.chat.completions.create(

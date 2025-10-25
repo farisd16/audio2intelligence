@@ -14,6 +14,7 @@ from sqlmodel import (
     Column,
     JSON,
 )
+from sqlalchemy.orm import selectinload
 import assemblyai as aai
 import uvicorn
 from dotenv import load_dotenv
@@ -61,22 +62,22 @@ class Context(SQLModel, table=True):
 class AudioSample(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     name: str = Field(index=True)
-    description: Dict[str, str] = Field(default_factory=dict, sa_column=Column(JSON))
+    description: str = Field(default="")
     utterances: List[Dict[str, Any]] = Field(
         default_factory=list, sa_column=Column(JSON)
     )
 
     context_id: Optional[int] = Field(default=None, foreign_key="context.id")
-    context: Optional[Context] = Relationship(back_populates="audio_samples")
+    context: Optional["Context"] = Relationship(back_populates="audio_samples")
 
 
 class Speaker(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     name: Dict[str, str] = Field(default_factory=dict, sa_column=Column(JSON))
-    description: Dict[str, str] = Field(default_factory=dict, sa_column=Column(JSON))
+    description: str = Field(default="")
 
     context_id: Optional[int] = Field(default=None, foreign_key="context.id")
-    context: Optional[Context] = Relationship(back_populates="speakers")
+    context: Optional["Context"] = Relationship(back_populates="speakers")
 
 
 class Hierarchy(SQLModel, table=True):
@@ -125,6 +126,21 @@ async def get_contexts(
     return contexts
 
 
+@app.get("/{context_id}")
+def get_context(session: SessionDep, context_id: int):
+    context = session.exec(
+        select(Context)
+        .options(selectinload(Context.audio_samples))
+        .where(Context.id == context_id)
+    ).first()
+
+    audio_samples = session.exec(
+        select(AudioSample).where(AudioSample.context_id == context_id)
+    ).all()
+
+    return {"context": context, "audio_samples": audio_samples}
+
+
 @app.post("/create-context")
 async def create_context(
     session: SessionDep, create_context_dto: CreateContextDTO
@@ -145,7 +161,7 @@ async def create_context(
 @app.put("/upload")
 async def upload_sample(
     session: SessionDep,
-    context_id: str = Form(...),
+    context_id: int = Form(...),
     audio_sample: UploadFile = File(...),
 ):
     transcript = aai.Transcriber().transcribe(audio_sample.file, config)

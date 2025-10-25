@@ -46,10 +46,10 @@ export class MainComponent implements OnInit {
     },
   ];
 
-  ngOnInit(): void {
+  refreshContexts() {
+    // Refresh the contexts list after closing the dialog
     this.http.get<Context[]>(this.url).subscribe({
       next: (data) => {
-        console.log(data);
         this.contexts = data;
         this.cdr.detectChanges();
       },
@@ -59,13 +59,20 @@ export class MainComponent implements OnInit {
     });
   }
 
+  ngOnInit(): void {
+    this.refreshContexts();
+  }
+
   openSession(contextId: number) {
-    console.log(contextId);
     this.router.navigate(['session', { id: contextId }]);
   }
 
   openAddDialog() {
     const dialogRef = this.dialog.open(AddSessionDialog, {});
+
+    dialogRef.afterClosed().subscribe((result) => {
+      this.refreshContexts();
+    });
   }
 }
 
@@ -86,7 +93,6 @@ export class AddSessionDialog {
     this.http.post(this.url + '/create-context', { name: this.name }).subscribe({
       next: (response) => {
         console.log('Context created successfully:', response);
-        this.dialogRef.close();
       },
       error: (error) => {
         console.error('Error creating context:', error);

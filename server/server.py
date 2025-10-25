@@ -20,7 +20,7 @@ import uvicorn
 from dotenv import load_dotenv
 from pydantic import BaseModel
 
-from llm import translate_text
+from llm import translate_text, generate_summary
 
 load_dotenv()
 
@@ -187,9 +187,11 @@ async def upload_sample(
         text = text.strip()
         utterances[idx]["text"]["en"] = text
 
+    summarized_english_text = generate_summary(translated_english_text)
+
     new_audio_sample = AudioSample(
         name=audio_sample.filename,
-        description="Lorem ipsum",
+        description=summarized_english_text,
         utterances=utterances,
         context_id=context_id,
     )

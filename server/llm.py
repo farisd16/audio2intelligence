@@ -34,3 +34,25 @@ def translate_text(russian_text: str) -> str:
     response = completion.choices[0].message.content
     print(f"LLM translated text to English:\n{response}")
     return response
+
+
+def generate_summary(text: str) -> str:
+    completion = client.chat.completions.create(
+        model="deepseek-ai/DeepSeek-V3.2-Exp:novita",
+        messages=[
+            {
+                "role": "system",
+                "content": "You are a helpful assistant whose task is to summarize text. Be concise and use a maximum of 6 sentences.",
+            },
+            {
+                "role": "user",
+                "content": f"""\
+                    Return ONLY the summarized text. Here is the original text:
+                    {text}
+                """,
+            },
+        ],
+    )
+    response = completion.choices[0].message.content
+    print(f"LLM summarized text:\n{response}")
+    return response

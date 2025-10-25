@@ -22,7 +22,13 @@
       </div>
     </div>
     <div class="col-8 text-center">
-      <p class="box-label" style="margin-top: 1.5em">Speaker Hierarchy</p>
+      <div class="d-flex justify-content-between" style="margin: 1.5em 0">
+        <p class="box-label" style="align-self: end; margin-bottom: 0">Speaker Hierarchy</p>
+        <mat-button-toggle-group [(ngModel)]="language" (change)="switchLanguage()" exclusive>
+          <mat-button-toggle value="en">EN</mat-button-toggle>
+          <mat-button-toggle value="ru">RU</mat-button-toggle>
+        </mat-button-toggle-group>
+      </div>
       <div class="box-container w-100">
         <ngx-graph [links]="links" [nodes]="nodes" layout="dagre" [draggingEnabled]="false">
           <ng-template #nodeTemplate let-node>

@@ -8,12 +8,14 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatTableModule } from '@angular/material/table';
 import { MatIconModule } from '@angular/material/icon';
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
 
 // ngx-graph imports
 import { NgxGraphModule, Node } from '@swimlane/ngx-graph';
 import { NgxChartsModule } from '@swimlane/ngx-charts';
 import { AudioModal } from '../audio-modal/audio-modal';
 import { Router } from '@angular/router';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 interface Audio {
   id: number;
@@ -36,6 +38,9 @@ interface Codeword {
     NgxChartsModule,
     MatTableModule,
     MatIconModule,
+    MatButtonToggleModule,
+    ReactiveFormsModule,
+    FormsModule,
   ],
   templateUrl: './session-component.html',
   styleUrl: './session-component.scss',
@@ -44,6 +49,7 @@ export class SessionComponent {
   summary =
     'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc nec dictum augue. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Sed fringilla rutrum posuere. Vivamus maximus purus vitae ex sodales, nec aliquet sem vestibulum. Praesent varius risus at urna vulputate condimentum. Interdum et malesuada fames ac ante ipsum primis in faucibus. Pellentesque tempor, est in scelerisque condimentum, tellus dolor varius arcu, et sollicitudin magna urna id tortor. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc nec dictum augue. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Sed fringilla rutrum posuere. Vivamus maximus purus vitae ex sodales, nec aliquet sem vestibulum. Praesent varius risus at urna vulputate condimentum. Interdum et malesuada fames ac ante ipsum primis in faucibus. Pellentesque tempor, est in scelerisque condimentum, tellus dolor varius arcu, et sollicitudin magna urna id tortor.';
   placeholderText = 'Intercepted radio message of Russian soldiers communicating plan of attack';
+  language = 'en';
 
   displayedColumns: string[] = ['word', 'desc'];
   codewords: Codeword[] = [
@@ -86,6 +92,11 @@ export class SessionComponent {
       panelClass: 'dark-cyan-dialog',
       data: { speakerId: node.id },
     });
+  }
+
+  switchLanguage() {
+    if (this.language === 'ru') this.language = 'en';
+    else this.language = 'ru';
   }
 
   onAudioClick(id: number) {

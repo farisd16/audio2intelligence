@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, inject, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -14,7 +14,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 interface Context {
   id: number;
   name: string;
-  dateCreated: string;
+  date: string;
   desc: string;
 }
 
@@ -24,25 +24,40 @@ interface Context {
   templateUrl: './main-component.html',
   styleUrl: './main-component.scss',
 })
-export class MainComponent {
+export class MainComponent implements OnInit {
   readonly dialog = inject(MatDialog);
 
-  constructor(private router: Router) {}
+  constructor(private router: Router, private http: HttpClient, private cdr: ChangeDetectorRef) {}
+
+  private url = 'http://localhost:8000';
 
   contexts: Context[] = [
     {
       id: 1,
       name: 'Session 1',
-      dateCreated: 'Oct 25, 2025',
+      date: 'Oct 25, 2025',
       desc: 'Intercepted radio message of Russian soldiers communicating plan of attack',
     },
     {
       id: 2,
       name: 'Session 2',
-      dateCreated: 'Oct 23, 2025',
+      date: 'Oct 23, 2025',
       desc: 'Intercepted radio message of Russian soldiers communicating plan of attack',
     },
   ];
+
+  ngOnInit(): void {
+    this.http.get<Context[]>(this.url).subscribe({
+      next: (data) => {
+        console.log(data);
+        this.contexts = data;
+        this.cdr.detectChanges();
+      },
+      error: (error) => {
+        console.error('Error fetching contexts:', error);
+      },
+    });
+  }
 
   openSession(contextId: number) {
     console.log(contextId);

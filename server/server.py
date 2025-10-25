@@ -1,13 +1,40 @@
-from typing import Annotated
+from typing import Annotated, List, Optional
+from datetime import datetime
+import os
 
-from fastapi import Depends, FastAPI, HTTPException, Query
-from sqlmodel import Field, Session, SQLModel, create_engine, select
+from fastapi import Depends, FastAPI, UploadFile, Query
+from sqlmodel import Field, Session, SQLModel, create_engine, select, Relationship
+import assemblyai as aai
+import uvicorn
+from dotenv import load_dotenv
+
+load_dotenv()
+
+aai.settings.api_key = os.environ.get("AAI_TOKEN")
+config = aai.TranscriptionConfig(
+    speaker_labels=True,
+    language_code="ru",
+)
 
 app = FastAPI()
 
 
 class Context(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
+    name: str = Field(index=True)
+    description: str = Field()
+    date: datetime
+
+    audio_samples: List["AudioSample"] = Relationship(back_populates="context")
+
+
+class AudioSample(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    name: str = Field(index=True)
+    description: str = Field()
+
+    context_id: Optional[int] = Field(default=None, foreign_key="context.id")
+    context: Optional[Context] = Relationship(back_populates="audio_samples")
 
 
 sqlite_file_name = "database.db"
@@ -42,3 +69,15 @@ async def get_contexts(
 ) -> list[Context]:
     contexts = session.exec(select(Context).offset(offset).limit(limit)).all()
     return contexts
+
+
+@app.put("/upload")
+async def upload_sample(session: SessionDep, audio_sample: UploadFile):
+    transcript = aai.Transcriber().transcribe(audio_sample.file, config)
+    print(transcript.text)
+    for utterance in transcript.utterances:
+        print(f"Speaker {utterance.speaker}: {utterance.text}")
+
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8000)

@@ -1,0 +1,22 @@
+<div class="container mt-5">
+  <div class="page-title">Welcome!</div>
+  <div class="p-3 d-flex flex-column context-container">
+    @for(context of contexts; track context.id) {
+    <mat-card appearance="outlined" class="session-card">
+      <mat-card-header>
+        <mat-card-title>{{ context.name }}</mat-card-title>
+        <mat-card-subtitle>{{ context.dateCreated }}</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <p>{{ context.desc }}</p>
+      </mat-card-content>
+      <mat-card-actions>
+        <button matButton class="mt-1 open-btn" (click)="openSession(context.id)">
+          Open Report
+        </button>
+      </mat-card-actions>
+    </mat-card>
+    }
+    <button matButton="filled" class="add-btn" (click)="openAddDialog()">Add new session</button>
+  </div>
+</div>

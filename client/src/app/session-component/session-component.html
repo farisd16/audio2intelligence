@@ -1,0 +1,87 @@
+<button mat-fab mini color="accent" class="back-fab" (click)="goBack()">
+  <mat-icon>keyboard_double_arrow_left</mat-icon>
+</button>
+
+<div class="row-wrapper h-100">
+  <div class="row h-100">
+    <div class="col-4 audio-container h-100">
+      <div class="d-flex flex-column" style="gap: 1em; padding: 1.5em 0.5em">
+        <button matButton="filled" class="add-btn" (click)="onAddClick()">Add new audio</button>
+        <input type="file" style="display: none" #fileInput (change)="onFileSelected($event)" />
+        @for(audio of audios; track audio.id) {
+        <mat-card appearance="raised">
+          <mat-card-header>
+            <mat-card-title>{{ audio.name }}</mat-card-title>
+            <mat-card-subtitle class="mt-1">{{ audio.desc }}</mat-card-subtitle>
+          </mat-card-header>
+          <mat-card-actions>
+            <button matButton class="view-btn" (click)="onAudioClick(audio.id)">View More</button>
+          </mat-card-actions>
+        </mat-card>
+        }
+      </div>
+    </div>
+    <div class="col-8 text-center">
+      <p class="box-label" style="margin-top: 1.5em">Speaker Hierarchy</p>
+      <div class="box-container w-100">
+        <ngx-graph [links]="links" [nodes]="nodes" layout="dagre" [draggingEnabled]="false">
+          <ng-template #nodeTemplate let-node>
+            <svg:g class="node" (click)="onNodeClick(node)">
+              <svg:rect
+                [attr.width]="node.dimension.width"
+                [attr.height]="node.dimension.height"
+                [attr.fill]="node.data.color"
+              />
+              <svg:text
+                alignment-baseline="central"
+                [attr.x]="10"
+                [attr.y]="node.dimension.height / 2"
+                dominant-baseline="middle"
+                font-family="Roboto"
+              >
+                {{ node.label }}
+              </svg:text>
+            </svg:g>
+          </ng-template></ngx-graph
+        >
+      </div>
+      <!--<div class="d-flex mt-3" style="justify-content: center; gap: 2em">
+        <button matButton="filled">Merge Speakers</button>
+        <button matButton="filled">Remove Links</button>
+      </div>-->
+      <div class="row" style="margin-top: 2em">
+        <div class="col-6 ps-0">
+          <div class="box-label">Session Summary</div>
+          <div class="box-container">
+            <div class="text-container">
+              <p style="text-align: start; margin-bottom: 0">{{ summary }}</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-6 pe-0">
+          <div class="box-label">Codewords</div>
+          <div class="box-container">
+            <div class="text-container">
+              <table mat-table [dataSource]="dataSource" style="background: transparent !important">
+                <!-- Word Column -->
+                <ng-container matColumnDef="word">
+                  <th mat-header-cell *matHeaderCellDef>Codeword</th>
+                  <td mat-cell *matCellDef="let element">{{ element.word }}</td>
+                </ng-container>
+
+                <!-- Desc Column -->
+                <ng-container matColumnDef="desc">
+                  <th mat-header-cell *matHeaderCellDef>Description</th>
+                  <td mat-cell *matCellDef="let element">{{ element.desc }}</td>
+                </ng-container>
+
+                <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+                <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

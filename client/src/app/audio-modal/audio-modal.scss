@@ -1,0 +1,47 @@
+.desc-label {
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.speaker-container {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.speaker-box {
+  padding: 0.5rem 1rem;
+  border-radius: 10px;
+  /* use a subtle translucent border suitable for dark theme */
+  border: solid 1px rgba(255, 255, 255, 0.08);
+  transition: all 0.5s ease;
+
+  &:hover {
+    transform: scale(1.1);
+    cursor: pointer;
+  }
+}
+
+.mat-mdc-table,
+.mat-mdc-header-row,
+.mat-mdc-cell {
+  /* Allow table to inherit dialog / theme colors (don't force white background or black text) */
+  background-color: transparent !important;
+  color: inherit !important;
+}
+
+.speaker-column {
+  font-weight: bold;
+  width: 1em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Optional: style the dialog container when opened with panelClass 'dark-cyan-dialog' */
+.dark-cyan-dialog .mat-mdc-dialog-container {
+  background: transparent; /* let global dark-cyan theme provide background */
+  color: inherit;
+}

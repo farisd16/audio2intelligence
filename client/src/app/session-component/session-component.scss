@@ -1,0 +1,60 @@
+/* Color definitions */
+$light-bg: rgb(16, 16, 16);
+
+/* Audio file picker styling */
+
+.add-btn:hover {
+  background-color: #00ddddc2;
+  transition: background-color 0.5s ease;
+}
+
+.row-wrapper {
+  width: 100%;
+  overflow-x: hidden;
+
+  .row {
+    margin-left: 0;
+    margin-right: 0;
+  }
+}
+
+.audio-container {
+  background-color: $light-bg;
+  height: 100%;
+  overflow-y: auto;
+}
+
+.view-btn:hover {
+  background-color: #00dddd21;
+  transition: background-color 0.5s ease;
+}
+
+/* Main session detail styling */
+
+.box-container {
+  background-color: $light-bg;
+  border-radius: 20px;
+  border: solid 1px #2f3636;
+  padding: 1em;
+  overflow: hidden;
+}
+
+.box-label {
+  text-align: start;
+  margin-left: 1em;
+  font-weight: 500;
+  margin-bottom: 12px;
+}
+
+.text-container {
+  overflow-y: auto;
+  height: 14em;
+}
+
+/* Back button styling */
+.back-fab {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 1000; /* on top of everything */
+}

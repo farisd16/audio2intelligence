@@ -1,0 +1,10 @@
+<h2 mat-dialog-title>Add new session</h2>
+<mat-dialog-content>
+  <mat-form-field style="width: 250px">
+    <mat-label>Name of your new session</mat-label>
+    <input matInput [(ngModel)]="name" />
+  </mat-form-field>
+</mat-dialog-content>
+<mat-dialog-actions>
+  <button matButton (click)="onSubmit()" [disabled]="!name">Add</button>
+</mat-dialog-actions>

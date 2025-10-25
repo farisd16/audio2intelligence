@@ -1,0 +1,34 @@
+<h2 mat-dialog-title>Audio "{{ name }}"</h2>
+<mat-dialog-content>
+  <div class="desc-label">Audio Summary</div>
+  <p class="desc-text">{{ desc }}</p>
+  <div class="desc-label">Speakers in Audio File</div>
+  <div class="speaker-container">
+    @for(speaker of speakers; track speaker.id) {
+    <div class="speaker-box" (click)="onSpeakerClick(speaker.id)">{{ speaker.name }}</div>
+    }
+  </div>
+  <mat-divider></mat-divider>
+  <table mat-table [dataSource]="transcripts" style="margin-top: 1rem">
+    <!-- Timestamp Column -->
+    <ng-container matColumnDef="timestamp">
+      <th mat-header-cell *matHeaderCellDef>Timestamp</th>
+      <td mat-cell *matCellDef="let element">{{ element.timestamp }}</td>
+    </ng-container>
+
+    <!-- Name Column -->
+    <ng-container matColumnDef="speaker">
+      <th mat-header-cell *matHeaderCellDef>Speaker</th>
+      <td mat-cell *matCellDef="let element" class="speaker-column">{{ element.speaker }}</td>
+    </ng-container>
+
+    <!-- Weight Column -->
+    <ng-container matColumnDef="content">
+      <th mat-header-cell *matHeaderCellDef>Content</th>
+      <td mat-cell *matCellDef="let element" class="py-2">{{ element.content }}</td>
+    </ng-container>
+
+    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+    <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+  </table>
+</mat-dialog-content>

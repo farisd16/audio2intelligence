@@ -1,0 +1,35 @@
+/* Color definitions */
+$light-bg: rgb(27, 27, 27);
+
+/* Main page styling */
+.context-container {
+  background-color: $light-bg;
+  border-radius: 20px;
+  gap: 1.5em;
+  box-shadow: 0 0 20px $light-bg;
+}
+
+.page-title {
+  text-align: center;
+  font-weight: bold;
+  font-size: 2rem;
+  margin-bottom: 1.5em;
+}
+
+.session-card {
+  transition: all 0.5s ease;
+}
+
+.session-card:hover {
+  border-color: #485755;
+}
+
+.add-btn:hover {
+  background-color: #00ddddc2;
+  transition: background-color 0.5s ease;
+}
+
+.open-btn:hover {
+  background-color: #00dddd21;
+  transition: background-color 0.5s ease;
+}

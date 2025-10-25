@@ -2,6 +2,7 @@ import { Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { HttpClient } from '@angular/common/http';
 
 // Material imports
 import { MatCardModule } from '@angular/material/card';
@@ -62,8 +63,20 @@ export class AddSessionDialog {
   readonly dialogRef = inject(MatDialogRef<AddSessionDialog>);
   name = '';
 
+  constructor(private http: HttpClient) {}
+
+  private url = 'http://localhost:8000';
+
   onSubmit(): void {
-    console.log(this.name);
+    this.http.post(this.url + '/create-context', { name: this.name }).subscribe({
+      next: (response) => {
+        console.log('Context created successfully:', response);
+        this.dialogRef.close();
+      },
+      error: (error) => {
+        console.error('Error creating context:', error);
+      },
+    });
     this.dialogRef.close();
   }
 }

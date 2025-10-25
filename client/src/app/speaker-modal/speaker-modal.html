@@ -1,7 +1,7 @@
 <h2 mat-dialog-title>Speaker Info</h2>
 <mat-dialog-content>
-  <p>You clicked speaker: {{ data?.speakerId }}</p>
-  <p>Here you can add content specific to this node.</p>
+  <p>You clicked speaker {{ data.speaker.name }}</p>
+  <p>{{ data.speaker.description }}</p>
 </mat-dialog-content>
 <mat-dialog-actions align="end">
   <button mat-button (click)="onClose()">Close</button>

@@ -21,11 +21,6 @@ interface Transcript {
   content: { en: string; ru: string };
 }
 
-interface Speaker {
-  name: string;
-  id: number;
-}
-
 @Component({
   selector: 'app-audio-modal',
   imports: [MatDividerModule, MatTableModule, MatDialogModule, MatButtonToggleModule, FormsModule],
@@ -62,10 +57,7 @@ export class AudioModal implements OnInit {
     'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc nec dictum augue. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Sed fringilla rutrum posuere. Vivamus maximus purus vitae ex sodales, nec aliquet sem vestibulum. Praesent varius risus at urna vulputate condimentum. Interdum et malesuada fames ac ante ipsum primis in faucibus. Pellentesque tempor, est in scelerisque condimentum, tellus dolor varius arcu, et sollicitudin magna urna id tortor. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc nec dictum augue. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Sed fringilla rutrum posuere. Vivamus maximus purus vitae ex sodales, nec aliquet sem vestibulum. Praesent varius risus at urna vulputate condimentum. Interdum et malesuada fames ac ante ipsum primis in faucibus. Pellentesque tempor, est in scelerisque condimentum, tellus dolor varius arcu, et sollicitudin magna urna id tortor.';
   displayedColumns: string[] = ['timestamp', 'speaker', 'content'];
   transcripts: Transcript[] = [];
-  speakers: Speaker[] = [
-    { name: 'Speaker A', id: 1 },
-    { name: 'Speaker B', id: 2 },
-  ];
+  speakers: string[] = ['Speaker A', 'Speaker B'];
 
   switchLanguage() {
     this.languageService.toggleLanguage();
@@ -75,12 +67,12 @@ export class AudioModal implements OnInit {
     this.dialogRef.close();
   }
 
-  onSpeakerClick(speakerId: number) {
+  onSpeakerClick(speakerName: string) {
     // Close the material dialog, then open the SpeakerModal as a Material dialog
     this.dialogRef.close();
     this.dialog.open(SpeakerModal, {
       panelClass: 'dark-cyan-dialog',
-      data: { speakerId: String(speakerId) },
+      data: { speakerName: speakerName },
     });
   }
 }

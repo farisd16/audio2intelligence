@@ -5,6 +5,7 @@ import { AudioModal } from '../audio-modal/audio-modal';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
+import { Speaker } from '../speaker-modal/speaker-modal';
 
 // Material imports
 import { MatButtonModule } from '@angular/material/button';
@@ -43,6 +44,11 @@ interface ContextResponseData {
     // backend returns a list of objects like { word: string, meaning: string }
     codewords: Array<{ word: string; meaning: string }>;
   };
+  hierarchy: Array<{
+    parent_name: string;
+    child_name: string;
+  }>;
+  speakers: Speaker[];
   audio_samples: Audio[];
 }
 
@@ -86,17 +92,9 @@ export class SessionComponent implements OnInit {
     { id: 8, name: 'Audio 8', description: this.placeholderText },
   ];
 
-  nodes = [
-    { id: '1', label: 'Root' },
-    { id: '2', label: 'Child A' },
-    { id: '3', label: 'Child B' },
-    { id: '4', label: 'Single Node' },
-  ];
-
-  links = [
-    { source: '1', target: '2', label: 'Edge 1-2' },
-    { source: '1', target: '3', label: 'Edge 1-3' },
-  ];
+  nodes: { id: string; label?: string }[] = [];
+  links: { source: string; target: string }[] = [];
+  speakers: Speaker[] = [];
 
   @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
 
@@ -131,6 +129,28 @@ export class SessionComponent implements OnInit {
       }
 
       this.dataSource = this.codewords;
+      this.speakers = context.speakers;
+      this.nodes = context.speakers.map((speaker) => ({
+        id: speaker.id,
+        label: speaker.name,
+      }));
+      this.links = context.hierarchy
+        .map((h) => {
+          // Find the corresponding node IDs
+          const parentNode = this.nodes.find((n) => n.label === h.parent_name);
+          const childNode = this.nodes.find((n) => n.label === h.child_name);
+
+          // Only include the link if both nodes exist
+          if (parentNode && childNode) {
+            return {
+              source: parentNode.id,
+              target: childNode.id,
+            };
+          }
+          // Skip invalid links
+          return null;
+        })
+        .filter((l) => l !== null);
       this.cdr.detectChanges();
     });
   }
@@ -139,7 +159,7 @@ export class SessionComponent implements OnInit {
     // Open SpeakerModal as a Material dialog and pass node ID
     this.dialog.open(SpeakerModal, {
       panelClass: 'dark-cyan-dialog',
-      data: { speakerId: node.id },
+      data: { speaker: this.speakers.find((n) => n.id === node.id) },
     });
   }
 

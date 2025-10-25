@@ -12,8 +12,8 @@
   <p class="desc-text">{{ desc }}</p>
   <div class="desc-label">Speakers in Audio File</div>
   <div class="speaker-container">
-    @for(speaker of speakers; track speaker.id) {
-    <div class="speaker-box" (click)="onSpeakerClick(speaker.id)">{{ speaker.name }}</div>
+    @for(speaker of speakers; track speaker.name) {
+    <div class="speaker-box" (click)="onSpeakerClick(speaker.name)">{{ speaker.name }}</div>
     }
   </div>
   <mat-divider></mat-divider>

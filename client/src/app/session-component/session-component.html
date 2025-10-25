@@ -26,6 +26,7 @@
     <div class="col-8 text-center">
       <p class="box-label" style="margin-top: 1.5em">Speaker Hierarchy</p>
       <div class="box-container w-100">
+        @if(nodes.length) {
         <ngx-graph [links]="links" [nodes]="nodes" layout="dagre" [draggingEnabled]="false">
           <ng-template #nodeTemplate let-node>
             <svg:g class="node" (click)="onNodeClick(node)">
@@ -46,6 +47,7 @@
             </svg:g>
           </ng-template></ngx-graph
         >
+        }
       </div>
       <!--<div class="d-flex mt-3" style="justify-content: center; gap: 2em">
         <button matButton="filled">Merge Speakers</button>

@@ -21,7 +21,7 @@ import uvicorn
 from dotenv import load_dotenv
 from pydantic import BaseModel
 
-from llm import translate_text, generate_summary, generate_context_summary
+from llm import translate_text, generate_summary, generate_context_summary, find_code_words
 
 load_dotenv()
 
@@ -108,9 +108,18 @@ class CreateContextDTO(BaseModel):
 class UploadSampleDTO(BaseModel):
     context_id: str
 
+def parse_codewords(text: str) -> List[Dict[str, str]]:
+    codewords_list = []
+    for line in text.strip().split("\n"):
+        if "-" in line:
+            key, value = line.split("-", 1)
+            codewords_list.append({
+                "word": key.strip(),
+                "meaning": value.strip()
+            })
+    return codewords_list
 
 SessionDep = Annotated[Session, Depends(get_session)]
-
 
 @app.on_event("startup")
 def on_startup():
@@ -208,10 +217,14 @@ async def upload_sample(
         context_text += f"Audio Sample {index} : {audio.description}\n"
     summarized_context_text = generate_context_summary(context_text)
 
+    possible_code_words = ""
+    possible_code_words = find_code_words(summarized_context_text)
+    code_words = parse_codewords(possible_code_words)
+
     stmt = (
         update(Context)
         .where(Context.id == context_id)
-        .values(description=summarized_context_text)
+        .values(description=summarized_context_text, codewords=code_words)
     )
     
     session.exec(stmt)

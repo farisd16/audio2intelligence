@@ -40,7 +40,7 @@ class Context(SQLModel, table=True):
     description: str = Field(default="")
     date: datetime
     codewords: List[Dict[str, str]] = Field(
-        default=[], default_factory=list, sa_column=Column(JSON)
+        default_factory=list, sa_column=Column(JSON)
     )
 
     audio_samples: List["AudioSample"] = Relationship(back_populates="context")
@@ -51,7 +51,7 @@ class AudioSample(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     name: str = Field(index=True)
     description: Dict[str, str] = Field(default_factory=dict, sa_column=Column(JSON))
-    utterances: List[Dict[str, str, Any]] = Field(
+    utterances: List[Dict[str, Any]] = Field(
         default_factory=list, sa_column=Column(JSON)
     )
 
@@ -109,6 +109,7 @@ async def get_contexts(
 async def create_context(session: SessionDep, name: str) -> int:
     new_context = Context(
         name=name,
+        codewords=[],
         date=datetime.now(datetime.timezone.cet),
     )
 

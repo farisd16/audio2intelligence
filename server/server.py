@@ -1,9 +1,18 @@
-from typing import Annotated, List, Optional
+from typing import Annotated, List, Optional, Dict
 from datetime import datetime
 import os
 
 from fastapi import Depends, FastAPI, UploadFile, Query
-from sqlmodel import Field, Session, SQLModel, create_engine, select, Relationship
+from sqlmodel import (
+    Field,
+    Session,
+    SQLModel,
+    create_engine,
+    select,
+    Relationship,
+    Column,
+    JSON,
+)
 import assemblyai as aai
 import uvicorn
 from dotenv import load_dotenv
@@ -26,15 +35,29 @@ class Context(SQLModel, table=True):
     date: datetime
 
     audio_samples: List["AudioSample"] = Relationship(back_populates="context")
+    speakers: List["Speaker"] = Relationship(back_populates="context")
 
 
 class AudioSample(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     name: str = Field(index=True)
-    description: str = Field()
+    description: Dict[str, str] = Field(default_factory=dict, sa_column=Column(JSON))
 
     context_id: Optional[int] = Field(default=None, foreign_key="context.id")
     context: Optional[Context] = Relationship(back_populates="audio_samples")
+
+
+class Speaker(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    name: Dict[str, str] = Field(default_factory=dict, sa_column=Column(JSON))
+    description: Dict[str, str] = Field(default_factory=dict, sa_column=Column(JSON))
+
+    context_id: Optional[int] = Field(default=None, foreign_key="context.id")
+    context: Optional[Context] = Relationship(back_populates="speakers")
+
+
+class Hierarchy(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
 
 
 sqlite_file_name = "database.db"

@@ -51,8 +51,18 @@
                 {{ node.label }}
               </svg:text>
             </svg:g>
-          </ng-template></ngx-graph
-        >
+          </ng-template>
+          <ng-template #linkTemplate let-link>
+            <svg:g class="link">
+              <svg:path
+                class="line"
+                stroke="white"
+                stroke-width="2"
+                fill="none"
+                [attr.d]="link.line"
+              />
+            </svg:g> </ng-template
+        ></ngx-graph>
         }
       </div>
       <!--<div class="d-flex mt-3" style="justify-content: center; gap: 2em">

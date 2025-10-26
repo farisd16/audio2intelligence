@@ -2,6 +2,12 @@
   <mat-icon>keyboard_double_arrow_left</mat-icon>
 </button>
 
+@if(isLoading) {
+<div class="loading-overlay">
+  <mat-spinner color="primary" diameter="100"></mat-spinner>
+</div>
+}
+
 <div class="row-wrapper h-100">
   <div class="row h-100">
     <div class="col-4 audio-container h-100">

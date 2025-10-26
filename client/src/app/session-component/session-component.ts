@@ -12,6 +12,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatTableModule } from '@angular/material/table';
 import { MatIconModule } from '@angular/material/icon';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDialog } from '@angular/material/dialog';
 
 // ngx-graph imports
@@ -64,6 +65,7 @@ interface ContextResponseData {
     MatIconModule,
     ReactiveFormsModule,
     FormsModule,
+    MatProgressSpinnerModule,
   ],
   templateUrl: './session-component.html',
   styleUrl: './session-component.scss',
@@ -76,6 +78,7 @@ export class SessionComponent implements OnInit {
   placeholderText = 'Intercepted radio message of Russian soldiers communicating plan of attack';
   contextId: string = '';
   language = 'en';
+  isLoading = false;
 
   displayedColumns: string[] = ['word', 'desc'];
   codewords: Codeword[] = [];
@@ -180,14 +183,17 @@ export class SessionComponent implements OnInit {
     const input = event.target as HTMLInputElement;
     if (!input.files?.length) return;
 
+    this.isLoading = true;
     const formData = new FormData();
     formData.append('context_id', this.contextId); // form field
     formData.append('audio_sample', input.files[0], input.files[0].name); // file field
     this.http.put(this.url + '/upload', formData).subscribe({
       next: () => {
+        this.isLoading = false;
         this.resetContext();
       },
       error: (error) => {
+        this.isLoading = false;
         console.error('Error uploading file:', error);
       },
     });

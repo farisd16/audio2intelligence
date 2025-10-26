@@ -58,3 +58,13 @@ $light-bg: rgb(16, 16, 16);
   right: 16px;
   z-index: 1000; /* on top of everything */
 }
+
+.loading-overlay {
+  position: fixed;
+  inset: 0; /* shorthand for top/right/bottom/left: 0 */
+  background: rgba(0, 0, 0, 0.5); /* dim background */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999; /* ensure it’s on top */
+}
